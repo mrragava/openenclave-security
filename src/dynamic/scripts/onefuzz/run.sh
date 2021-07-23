@@ -20,34 +20,34 @@ export AZCOPY="$AZCOPY_DIR/azcopy"
 popd
 
 pushd "$FUZZING_BUILD"
-onefuzz template libfuzzer basic $PROJECT create $GITHUB_SHA $POOL \
-    --target_exe ./create_host \
-    --duration $DURATION \
-    --setup_dir $FUZZING_BUILD \
-    --inputs ./create_corpus \
-    --notification_config @"$GITHUB_ISSUES_NOTIFICATION" \
-    --colocate_all_tasks \
-    --target_env ONEFUZZ_SETUP_DIR={setup_dir} LD_PRELOAD="{setup_dir}/libcreate_fileapihook.so"
+# onefuzz template libfuzzer basic $PROJECT create $GITHUB_SHA $POOL \
+#     --target_exe ./create_host \
+#     --duration $DURATION \
+#     --setup_dir $FUZZING_BUILD \
+#     --inputs ./create_corpus \
+#     --notification_config @"$GITHUB_ISSUES_NOTIFICATION" \
+#     --colocate_all_tasks \
+#     --target_env ONEFUZZ_SETUP_DIR={setup_dir} LD_PRELOAD="{setup_dir}/libcreate_fileapihook.so"
 
 List=(
     "oe_generate_attestation_certificate_enc_fuzz"
-    "oe_get_private_key_by_policy_enc_fuzz"
-    "oe_get_private_key_enc_fuzz"
-    "oe_get_public_key_by_policy_enc_fuzz"
-    "oe_get_public_key_by_policy_host_fuzz"
-    "oe_get_public_key_enc_fuzz"
-    'oe_get_public_key_host_fuzz'
-    "oe_get_report_enc_fuzz"
-    "oe_get_report_host_fuzz"
-    "oe_get_seal_key_by_policy_enc_fuzz"
-    "oe_get_seal_key_enc_fuzz"
-    "oe_get_target_info_enc_fuzz"
-    "oe_get_target_info_host_fuzz"
-    "oe_parse_report_enc_fuzz"
-    "oe_parse_report_host_fuzz"
-    "oe_verify_attestation_certificate_enc_fuzz"
-    "oe_verify_report_enc_fuzz"
-    "oe_verify_report_host_fuzz"
+#     "oe_get_private_key_by_policy_enc_fuzz"
+#     "oe_get_private_key_enc_fuzz"
+#     "oe_get_public_key_by_policy_enc_fuzz"
+#     "oe_get_public_key_by_policy_host_fuzz"
+#     "oe_get_public_key_enc_fuzz"
+#     'oe_get_public_key_host_fuzz'
+#     "oe_get_report_enc_fuzz"
+#     "oe_get_report_host_fuzz"
+#     "oe_get_seal_key_by_policy_enc_fuzz"
+#     "oe_get_seal_key_enc_fuzz"
+#     "oe_get_target_info_enc_fuzz"
+#     "oe_get_target_info_host_fuzz"
+#     "oe_parse_report_enc_fuzz"
+#     "oe_parse_report_host_fuzz"
+#     "oe_verify_attestation_certificate_enc_fuzz"
+#     "oe_verify_report_enc_fuzz"
+#     "oe_verify_report_host_fuzz"
 )
 
 for target in ${List[*]}; do
