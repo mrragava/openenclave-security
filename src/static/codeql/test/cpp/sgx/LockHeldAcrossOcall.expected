@@ -1,0 +1,1 @@
+| patterns.c:261:5:261:18 | call to oe_host_printf | OCALL 'oe_host_printf' is made while holding the lock taken $@. | patterns.c:260:5:260:16 | call to oe_spin_lock | here |

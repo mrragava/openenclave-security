@@ -1,0 +1,5 @@
+- description: OpenEnclave SGX trust-boundary, hardware-hygiene, lock and secret queries
+- queries: openenclave
+  from: openenclave-codeql-cpp
+- include:
+    id: /oe\/sgx\/.*/

@@ -1,0 +1,8 @@
+edges
+| patterns.c:123:24:123:25 | id | patterns.c:127:28:127:29 | id | provenance |  |
+nodes
+| patterns.c:123:24:123:25 | id | semmle.label | id |
+| patterns.c:127:28:127:29 | id | semmle.label | id |
+subpaths
+#select
+| patterns.c:127:19:127:30 | access to array | patterns.c:123:24:123:25 | id | patterns.c:127:28:127:29 | id | Bounds-checked load indexed by host-controlled $@ is called with no lfence after the check $@. | patterns.c:123:24:123:25 | id | id | patterns.c:125:9:125:15 | ... >= ... | here |

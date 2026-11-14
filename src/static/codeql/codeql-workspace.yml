@@ -1,0 +1,5 @@
+provide:
+  - "lib/cpp/qlpack.yml"
+  - "models/cpp/qlpack.yml"
+  - "queries/cpp/qlpack.yml"
+  - "test/cpp/qlpack.yml"

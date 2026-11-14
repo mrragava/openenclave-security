@@ -1,0 +1,8 @@
+name: openenclave/sgx-tests
+version: 0.0.0
+dependencies:
+  openenclave-codeql-cpp: "*"
+  openenclave/sgx-all: "*"
+  openenclave/sgx-models: "*"
+extractor: cpp
+tests: .

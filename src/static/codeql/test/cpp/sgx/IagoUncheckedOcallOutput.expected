@@ -1,0 +1,20 @@
+edges
+| edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument | edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument [st_size] | provenance | Src:MaD:33143  |
+| edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument | edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument [st_size] | provenance | Src:MaD:33143  |
+| edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument | edl_models.c:40:30:40:31 | *st [st_size] | provenance | Src:MaD:33143  |
+| edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument [st_size] | edl_models.c:40:30:40:31 | *st [st_size] | provenance |  |
+| edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument [st_size] | edl_models.c:40:30:40:31 | *st [st_size] | provenance |  |
+| edl_models.c:40:30:40:31 | *st [st_size] | edl_models.c:40:22:40:40 | st_size | provenance |  |
+| patterns.c:61:31:61:34 | oe_syscall_read_ocall output argument | patterns.c:63:22:63:32 | ret | provenance | Src:MaD:33293  |
+nodes
+| edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument | semmle.label | oe_syscall_fstat_ocall output argument |
+| edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument [st_size] | semmle.label | oe_syscall_fstat_ocall output argument [st_size] |
+| edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument [st_size] | semmle.label | oe_syscall_fstat_ocall output argument [st_size] |
+| edl_models.c:40:22:40:40 | st_size | semmle.label | st_size |
+| edl_models.c:40:30:40:31 | *st [st_size] | semmle.label | *st [st_size] |
+| patterns.c:61:31:61:34 | oe_syscall_read_ocall output argument | semmle.label | oe_syscall_read_ocall output argument |
+| patterns.c:63:22:63:32 | ret | semmle.label | ret |
+subpaths
+#select
+| edl_models.c:40:22:40:40 | st_size | edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument | edl_models.c:40:22:40:40 | st_size | Host-controlled value from $@ is used as a memory access size without an upper-bound check. | edl_models.c:38:42:38:43 | oe_syscall_fstat_ocall output argument | oe_syscall_fstat_ocall output argument |
+| patterns.c:63:22:63:32 | ret | patterns.c:61:31:61:34 | oe_syscall_read_ocall output argument | patterns.c:63:22:63:32 | ret | Host-controlled value from $@ is used as a memory access size without an upper-bound check. | patterns.c:61:31:61:34 | oe_syscall_read_ocall output argument | oe_syscall_read_ocall output argument |

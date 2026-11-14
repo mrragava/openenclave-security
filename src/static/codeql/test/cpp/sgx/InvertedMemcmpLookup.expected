@@ -1,0 +1,1 @@
+| patterns.c:327:13:327:18 | call to memcmp | 'memcmp' is non-zero when the buffers differ, so this lookup returns a non-matching element. |

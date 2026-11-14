@@ -1,0 +1,8 @@
+edges
+| patterns.c:16:30:16:30 | c | patterns.c:18:5:18:5 | c | provenance |  |
+nodes
+| patterns.c:16:30:16:30 | c | semmle.label | c |
+| patterns.c:18:5:18:5 | c | semmle.label | c |
+subpaths
+#select
+| patterns.c:18:5:18:5 | c | patterns.c:16:30:16:30 | c | patterns.c:18:5:18:5 | c | Host-controlled pointer from $@ is dereferenced without an enclave range check. | patterns.c:16:30:16:30 | c | c |

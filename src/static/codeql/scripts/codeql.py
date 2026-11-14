@@ -15,14 +15,18 @@ from subprocess import CalledProcessError
 from requests import get
 
 BUILD_DIR = "build"
-CODEQL_CLI_DEFAULT_VERSION = "v2.20.1"
+CODEQL_CLI_DEFAULT_VERSION = "v2.27.4"
 CODEQL_CLI_URL = "https://github.com/github/codeql-cli-binaries/releases/download/{}/codeql-linux64.zip"
 PROJECT_CODEQL_DB = "openenclave-codeql-db"
+PROJECT_CODEQL_WORK_DIR = "openenclave-codeql-db.work"
 STATIC_CODEQL_DIR = "src/static/codeql"
 SUT_OPENENCLAVE_DIR = "sut/openenclave"
 USER_SCAN_DIR = None
 QUERY_SUITES_DIR = "queries/cpp/suites"
+CODEQL_CLI_DIR = "codeql-cli"
 CODEQL_CLI_PATH = "codeql-cli/codeql/codeql"
+CODEQL_MODEL_PACK = "openenclave/sgx-models"
+DB_BUILDER = "scripts/build_oe_codeql_db.py"
 OE_AND_CODEQL_BUILTIN_QUERIES = "oe-codeql-security-queries.qls"
 OE_QUERIES_ONLY = "oe-security-queries-only.qls"
 SCAN_RESULTS_SARIF = "OpenEnclave.sarif"
@@ -213,21 +217,34 @@ def unzip_file(zip_file, extract_dir):
             logger.info(out_path)
 
 
+def installed_codeql_cli_version():
+    r"""
+    :return:(Str) Version of the CLI in the build path (e.g. v2.27.4), or None.
+    """
+    if not os.path.exists(get_codeql_cli()):
+        return None
+    status, output = subprocess.getstatusoutput(get_codeql_cli() + " version --format=terse")
+    return "v" + output.strip() if status == 0 else None
+
+
 def download_codeql_cli(clean=False):
     r""" Downloads CodeQL CLI and extracts it in build path.
+    The CLI version must match the codeql submodule (codeql-cli/<version> tag).
     :param clean:(boolean)
     :return:(boolean) True on success, False otherwise.
     """
-    cli_url = CODEQL_CLI_URL.format(get_codeql_cli_version())
-    file_name = os.path.join(get_build_path(), "codeql-cli.zip")
-    extract_dir = os.path.join(get_build_path(), "codeql-cli")
-    if os.path.exists(file_name):
-        if clean:
-            os.remove(file_name)
-            rmtree(extract_dir)
-        else:
-            logger.info("CodeQL CLI is downloaded!")
-            return True
+    version = get_codeql_cli_version()
+    cli_url = CODEQL_CLI_URL.format(version)
+    file_name = os.path.join(get_build_path(), "codeql-cli-{}.zip".format(version))
+    extract_dir = os.path.join(get_build_path(), CODEQL_CLI_DIR)
+    if not clean and installed_codeql_cli_version() == version:
+        logger.info(f"CodeQL CLI {version} is installed!")
+        return True
+    for path in (file_name, extract_dir):
+        if os.path.isdir(path):
+            rmtree(path)
+        elif os.path.exists(path):
+            os.remove(path)
     logger.info(f"Downloading: {cli_url}")
     with open(file_name, "wb") as file:
         response = get(cli_url)
@@ -246,38 +263,27 @@ def download_codeql_cli(clean=False):
 
 
 def create_codeql_database(clean=False):
-    r""" Creates CodeQL database by building Open Enclave project under CodeQL toolchain.
-    :param clean:(boolean) True performs a clean build by deleting build folder. False performs incremental build.
+    r""" Creates the CodeQL database with scripts/build_oe_codeql_db.py, which traces
+    compile-only builds of the enclave, syscall, common and host sources together with
+    oeedger8r-generated ECALL/OCALL stubs for all system EDLs (the CMake build of the
+    SDK alone does not contain the stub bodies).
+    :param clean:(boolean) True rebuilds the database even if it exists.
     :return:(boolean) True on success, False otherwise.
     """
     codeql_db_path = get_codeql_db_path()
-    codeql_suite_path = os.path.join(get_codeql_path(), "codeql")
-    openenclave_project_path = get_scan_path()
-    if not os.path.exists(codeql_db_path) or clean:
-        lgtm_build_dir = os.path.join(openenclave_project_path, "_lgtm_build_dir")
-        if os.path.exists(lgtm_build_dir):
-            rmtree(lgtm_build_dir)
-        lgtm_detected_source_root = os.path.join(
-            openenclave_project_path, "_lgtm_detected_source_root")
-        if os.path.exists(lgtm_detected_source_root):
-            os.remove(lgtm_detected_source_root)
-        if os.path.exists(codeql_db_path):
-            rmtree(codeql_db_path)
-        log_banner(f"Start building CodeQL database: {codeql_db_path}")
-        cmd_param = get_codeql_cli() + \
-                    f" database create {codeql_db_path} --source-root {openenclave_project_path}" \
-                    f" --search-path {codeql_suite_path} --language=cpp --threads=8"
-        if invoke_process(cmd_param) != 0:
-            logger.error("Failed to create CodeQL database")
-            return False
-        logger.info(f"CodeQL database created: {codeql_db_path}")
-
-    cmd_param = get_codeql_cli() + \
-                f" database upgrade {codeql_db_path} --search-path {codeql_suite_path} --threads=8"
+    if os.path.exists(codeql_db_path) and not clean:
+        logger.info(f"Using existing CodeQL database: {codeql_db_path}")
+        return True
+    log_banner(f"Start building CodeQL database: {codeql_db_path}")
+    cmd_param = f"{sys.executable} {os.path.join(get_codeql_path(), DB_BUILDER)}" \
+                f" --oe-src {get_scan_path()} --codeql {get_codeql_cli()}" \
+                f" --db {codeql_db_path}" \
+                f" --work-dir {os.path.join(get_build_path(), PROJECT_CODEQL_WORK_DIR)}" \
+                f" --jobs {os.cpu_count() or 8} --overwrite"
     if invoke_process(cmd_param) != 0:
-        logger.error(f"Failed to upgrade database: {cmd_param}")
+        logger.error("Failed to create CodeQL database")
         return False
-    logger.info(f"CodeQL database upgraded: {codeql_db_path}")
+    logger.info(f"CodeQL database created: {codeql_db_path}")
     return True
 
 
@@ -297,9 +303,12 @@ def run_codeql_analysis(scan_builtin_queries=True):
     log_banner(f"Starting analysis on database {codeql_db_path}")
     codeql_suite_path = os.path.join(get_codeql_path(), "codeql")
     results_path = os.path.join(get_build_path(), SCAN_RESULTS_SARIF)
+    # The model pack teaches the standard CodeQL queries the Open Enclave threat
+    # model (OCALL results and ECALL inputs as remote sources, OE allocators).
     cmd_param = get_codeql_cli() + \
-                f" database analyze {codeql_db_path} {queries} --search-path {codeql_suite_path} " \
-                f"--format=sarif-latest --threads=8 --output={results_path}"
+                f" database analyze {codeql_db_path} {queries} --search-path {codeql_suite_path}" \
+                f" --additional-packs {get_codeql_path()} --model-packs {CODEQL_MODEL_PACK}" \
+                f" --format=sarif-latest --threads=0 --output={results_path}"
 
     if invoke_process(cmd_param) != 0:
         logger.error(f"Failed to analyze database: {cmd_param}")
@@ -322,11 +331,15 @@ def get_severity_issues(severity=[Severity.ERROR]):
     with open(sarif_results, mode="r") as report_file:
         report_data = json.loads(report_file.read())
         for run in report_data["runs"]:
-            rules = run["tool"]["driver"]["rules"]
+            # Rules of queries from packs live in tool.extensions; the result
+            # references them through rule.toolComponent.index.
+            components = [run["tool"]["driver"]] + run["tool"].get("extensions", [])
             results = run.get("results", [])
             for result in results:
-                rule_index = result["ruleIndex"]
-                rule_props = rules[rule_index]["properties"]
+                rule_ref = result.get("rule", {})
+                component = components[rule_ref.get("toolComponent", {}).get("index", -1) + 1]
+                rule_index = rule_ref.get("index", result.get("ruleIndex"))
+                rule_props = component.get("rules", [])[rule_index].get("properties", {})
                 for sev in severity:
                     if rule_props.get("problem.severity") == sev:
                         for loc in result["locations"]:
@@ -346,14 +359,20 @@ def get_severity_issues(severity=[Severity.ERROR]):
 
 def run_codeql_scan(clean=True, scan_builtin_queries=False):
     r""" Orchestrates CodeQL scan in steps. (Download CLI, Build database, Perform analysis and Parse results)
-    :param clean:(boolean) True performs a clean build by deleting build folder. False performs incremental scan.
+    :param clean:(boolean) True deletes the CodeQL CLI, database and results first. False performs incremental scan.
     :param scan_builtin_queries:(boolean) True, includes builtin CodeQL queries along with OpenEnclave specific queries.
                                           False, runs analysis only using Open Enclave specific queries.
     :return:(List) [Status Code, Number of issues detected]
     """
     build_dir = get_build_path()
-    if clean and os.path.exists(build_dir):
-        rmtree(build_dir)
+    # build/ is shared with the fuzzing builds (build.sh); only remove CodeQL artifacts.
+    if clean:
+        for name in (PROJECT_CODEQL_DB, PROJECT_CODEQL_WORK_DIR, SCAN_RESULTS_SARIF):
+            path = os.path.join(build_dir, name)
+            if os.path.isdir(path):
+                rmtree(path)
+            elif os.path.exists(path):
+                os.remove(path)
     if not os.path.exists(build_dir):
         os.mkdir(build_dir)
     log_banner("Starting CodeQL Scan")

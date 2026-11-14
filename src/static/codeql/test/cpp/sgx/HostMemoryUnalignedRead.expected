@@ -1,0 +1,2 @@
+| patterns.c:111:21:111:24 | flag | This 4-byte load from host memory is not an 8-byte aligned, 8-byte sized read; copy the data in with oe_memcpy_aligned first. |
+| patterns.c:113:5:113:10 | call to memcpy | 'memcpy' reads host memory byte-wise; copy it in with oe_memcpy_aligned instead. |

@@ -1,0 +1,1 @@
+| patterns.c:204:5:204:16 | call to oe_spin_lock | This lock can still be held when 'leak_on_error' returns. |

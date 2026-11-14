@@ -15,10 +15,7 @@ import semmle.code.cpp.padding.Padding
 import Memory
 import Padding
 import Exclusions
-
-class OCallFunctionCall extends FunctionCall {
-  OCallFunctionCall() { this.getTarget().getName().matches("%_ocall") }
-}
+import OpenEnclave
 
 from Variable v, WastedSpaceType wst, VariableAccess va, OCallFunctionCall ofnCall
 where

@@ -1,0 +1,5 @@
+name: openenclave/sgx-all
+version: 0.1.0
+library: true
+dependencies:
+  codeql/cpp-all: "*"

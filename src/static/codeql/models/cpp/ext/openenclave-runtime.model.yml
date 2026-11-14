@@ -1,0 +1,112 @@
+# Hand-written models of the Open Enclave runtime API.
+# EDL-derived models live in ext/generated/ (see scripts/edl2codeql.py).
+extensions:
+  # Enclave and host allocators. These make the standard memory-safety
+  # queries (use-after-free, double-free, leaks, overflows) understand OE.
+  - addsTo:
+      pack: codeql/cpp-all
+      extensible: allocationFunctionModel
+    data: # namespace, type, subtypes, name, sizeArg, multArg, reallocPtrArg, requiresDealloc
+      - ["", "", False, "oe_malloc", "0", "", "", True]
+      - ["", "", False, "oe_calloc", "1", "0", "", True]
+      - ["", "", False, "oe_realloc", "1", "", "0", True]
+      - ["", "", False, "oe_memalign", "1", "", "", True]
+      - ["", "", False, "oe_host_malloc", "0", "", "", True]
+      - ["", "", False, "oe_host_calloc", "1", "0", "", True]
+      - ["", "", False, "oe_host_realloc", "1", "", "0", True]
+      - ["", "", False, "oe_allocate_ocall_buffer", "0", "", "", True]
+      - ["", "", False, "oe_allocate_switchless_ocall_buffer", "0", "", "", False]
+      - ["", "", False, "oe_arena_malloc", "0", "", "", False]
+      - ["", "", False, "oe_arena_calloc", "1", "0", "", False]
+  - addsTo:
+      pack: codeql/cpp-all
+      extensible: deallocationFunctionModel
+    data: # namespace, type, subtypes, name, freedArg
+      - ["", "", False, "oe_free", "0"]
+      - ["", "", False, "oe_realloc", "0"]
+      - ["", "", False, "oe_host_free", "0"]
+      - ["", "", False, "oe_host_realloc", "0"]
+      - ["", "", False, "oe_free_ocall_buffer", "0"]
+      - ["", "", False, "oe_free_key", "0"]
+      - ["", "", False, "oe_free_key", "2"]
+      - ["", "", False, "oe_free_seal_key", "0"]
+      - ["", "", False, "oe_free_seal_key", "1"]
+      - ["", "", False, "oe_free_report", "0"]
+      - ["", "", False, "oe_free_evidence", "0"]
+      - ["", "", False, "oe_free_endorsements", "0"]
+      - ["", "", False, "oe_free_attestation_certificate", "0"]
+
+  # Copy primitives implemented in inline assembly (rep movsq / verw) are
+  # opaque to data flow.
+  - addsTo:
+      pack: codeql/cpp-all
+      extensible: summaryModel
+    data: # namespace, type, subtypes, name, signature, ext, input, output, kind, provenance
+      - ["", "", False, "oe_memcpy_aligned", "", "", "Argument[*1]", "Argument[*0]", "value", "manual"]
+      - ["", "", False, "oe_memcpy_with_barrier", "", "", "Argument[*1]", "Argument[*0]", "value", "manual"]
+      - ["", "", False, "oe_memmove_with_barrier", "", "", "Argument[*1]", "Argument[*0]", "value", "manual"]
+      - ["", "", False, "oe_memcpy_s_with_barrier", "", "", "Argument[*2]", "Argument[*0]", "value", "manual"]
+      - ["", "", False, "oe_memmove_s_with_barrier", "", "", "Argument[*2]", "Argument[*0]", "value", "manual"]
+
+  # Attestation material and sealed blobs come from the host or a remote
+  # peer. Kind "remote" lets the standard queries track them as well.
+  - addsTo:
+      pack: codeql/cpp-all
+      extensible: sourceModel
+    data: # namespace, type, subtypes, name, signature, ext, output, kind, provenance
+      - ["", "", False, "oe_verify_evidence", "", "", "Parameter[*1]", "remote", "manual"]
+      - ["", "", False, "oe_verify_evidence", "", "", "Parameter[2]", "remote", "manual"]
+      - ["", "", False, "oe_verify_evidence", "", "", "Parameter[*3]", "remote", "manual"]
+      - ["", "", False, "oe_verify_evidence", "", "", "Parameter[4]", "remote", "manual"]
+      - ["", "", False, "oe_verify_attestation_certificate_with_evidence", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_verify_attestation_certificate_with_evidence", "", "", "Parameter[1]", "remote", "manual"]
+      - ["", "", False, "oe_verify_attestation_certificate_with_evidence_v2", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_verify_attestation_certificate_with_evidence_v2", "", "", "Parameter[1]", "remote", "manual"]
+      - ["", "", False, "oe_verify_attestation_certificate_with_evidence_v2", "", "", "Parameter[*2]", "remote", "manual"]
+      - ["", "", False, "oe_verify_attestation_certificate_with_evidence_v2", "", "", "Parameter[3]", "remote", "manual"]
+      - ["", "", False, "oe_verify_sgx_quote", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_verify_sgx_quote", "", "", "Parameter[1]", "remote", "manual"]
+      - ["", "", False, "oe_verify_sgx_quote", "", "", "Parameter[*2]", "remote", "manual"]
+      - ["", "", False, "oe_verify_sgx_quote", "", "", "Parameter[3]", "remote", "manual"]
+      - ["", "", False, "oe_verify_report", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_verify_report", "", "", "Parameter[1]", "remote", "manual"]
+      - ["", "", False, "oe_parse_sgx_endorsements", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_parse_sgx_endorsements", "", "", "Parameter[1]", "remote", "manual"]
+      - ["", "", False, "oe_validate_revocation_list", "", "", "Parameter[*1]", "remote", "manual"]
+      - ["", "", False, "oe_parse_tcb_info_json", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_parse_tcb_info_json", "", "", "Parameter[1]", "remote", "manual"]
+      - ["", "", False, "oe_parse_qe_identity_info_json", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_parse_qe_identity_info_json", "", "", "Parameter[1]", "remote", "manual"]
+      - ["", "", False, "oe_deserialize_custom_claims", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_deserialize_custom_claims", "", "", "Parameter[1]", "remote", "manual"]
+      - ["", "", False, "oe_unseal", "", "", "Parameter[*0]", "remote", "manual"]
+      - ["", "", False, "oe_unseal", "", "", "Parameter[1]", "remote", "manual"]
+      # Raw OCALL results and host-provided time.
+      - ["", "", False, "oe_ocall", "", "", "Argument[*2]", "oe-ocall-output", "manual"]
+      - ["", "", False, "oe_get_time", "", "", "ReturnValue", "oe-host-time", "manual"]
+
+  # Data leaving the enclave through runtime helpers that print or write via OCALLs.
+  - addsTo:
+      pack: codeql/cpp-all
+      extensible: sinkModel
+    data: # namespace, type, subtypes, name, signature, ext, input, kind, provenance
+      - ["", "", False, "oe_host_printf", "", "", "Argument[*0]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_printf", "", "", "Argument[*1]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_printf", "", "", "Argument[*2]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_printf", "", "", "Argument[*3]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_printf", "", "", "Argument[*4]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_printf", "", "", "Argument[1]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_printf", "", "", "Argument[2]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_printf", "", "", "Argument[3]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_printf", "", "", "Argument[4]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_fprintf", "", "", "Argument[*1]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_fprintf", "", "", "Argument[*2]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_fprintf", "", "", "Argument[*3]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_fprintf", "", "", "Argument[2]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_fprintf", "", "", "Argument[3]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_host_write", "", "", "Argument[*1]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_log", "", "", "Argument[*1]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_log", "", "", "Argument[*2]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_log", "", "", "Argument[*3]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_log", "", "", "Argument[2]", "oe-host-disclosure", "manual"]
+      - ["", "", False, "oe_log", "", "", "Argument[3]", "oe-host-disclosure", "manual"]

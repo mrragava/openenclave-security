@@ -1,0 +1,2 @@
+| patterns.c:102:8:102:11 | flag | This 4-byte store to host memory is not an 8-byte aligned, 8-byte sized write; use OE_WRITE_VALUE_WITH_BARRIER. |
+| patterns.c:104:5:104:10 | call to memcpy | 'memcpy' writes host memory byte-wise without a barrier; use the oe_*_with_barrier variant. |

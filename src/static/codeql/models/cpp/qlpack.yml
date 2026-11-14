@@ -1,0 +1,9 @@
+name: openenclave/sgx-models
+version: 0.1.0
+library: true
+extensionTargets:
+  codeql/cpp-all: "*"
+  openenclave/sgx-all: "*"
+dataExtensions:
+  - ext/*.model.yml
+  - ext/generated/*.model.yml
